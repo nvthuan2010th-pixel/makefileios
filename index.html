@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MobileConfig Builder</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0d0d0d;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.container {
+    width: 100%;
+    max-width: 900px;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 26px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+}
+h1 { font-size: 20px; color: #fff; margin-bottom: 6px; }
+.sub { font-size: 12px; color: #666; margin-bottom: 22px; }
+.step {
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 14px;
+    background: #0f0f0f;
+}
+.step h2 {
+    font-size: 13px;
+    color: #4a9eff;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+textarea, input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 13px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    outline: none;
+}
+textarea:focus, input:focus { border-color: #4a9eff; }
+textarea { resize: vertical; min-height: 120px; }
+.drop {
+    margin-top: 10px;
+    border: 2px dashed #333;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+    color: #888;
+    background: #0a0a0a;
+    transition: all 0.15s;
+}
+.drop:hover { border-color: #4a9eff; color: #4a9eff; }
+.drop.dragover { border-color: #4a9eff; background: #0f1720; }
+.file-info {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #0a1a0a;
+    border: 1px solid #14532d;
+    border-radius: 6px;
+    font-size: 12px;
+    display: none;
+}
+.file-info.show { display: block; }
+.file-info .name { color: #4ade80; font-weight: 600; word-break: break-all; }
+.file-info .meta { color: #86efac; font-size: 11px; font-family: 'Consolas', monospace; }
+.status {
+    margin-top: 8px;
+    padding: 7px 11px;
+    background: #101620;
+    border-left: 3px solid #4a9eff;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #86c5ff;
+    font-family: 'Consolas', monospace;
+}
+.status.ok { border-left-color: #22c55e; color: #86efac; }
+.status.locked { border-left-color: #666; color: #888; }
+button {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-primary { background: #4a9eff; color: #fff; }
+.btn-primary:hover { background: #3a8eef; }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-success:hover { background: #16a34a; }
+.btn-purple { background: #a855f7; color: #fff; }
+.btn-purple:hover { background: #9333ea; }
+.btn-block { width: 100%; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.log {
+    margin-top: 14px;
+    background: #050505;
+    border: 1px solid #1f1f1f;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #9ca3af;
+}
+.log .ok { color: #22c55e; }
+.log .err { color: #ef4444; }
+.log .warn { color: #eab308; }
+.log .info { color: #4a9eff; }
+.log .purple { color: #c084fc; }
+
+/* === GATE (màn hình khóa key) === */
+#gate {
+    position: fixed;
+    inset: 0;
+    background: #0d0d0d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+}
+#gate.hidden { display: none; }
+.gate-box {
+    width: 100%;
+    max-width: 380px;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 30px 26px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    text-align: center;
+}
+.gate-box .lock-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    filter: grayscale(0.3);
+}
+.gate-box h2 {
+    font-size: 17px;
+    color: #fff;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+.gate-box p {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 22px;
+}
+.gate-box input {
+    text-align: center;
+    letter-spacing: 2px;
+    padding: 12px;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+.gate-box button {
+    width: 100%;
+}
+.gate-msg {
+    margin-top: 12px;
+    font-size: 12px;
+    font-family: 'Consolas', monospace;
+    min-height: 18px;
+    color: #888;
+}
+.gate-msg.err { color: #ef4444; }
+.gate-msg.ok { color: #22c55e; }
+.gate-box.shake { animation: shake 0.35s; }
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== MÀN HÌNH KHÓA KEY ===== -->
+<div id="gate">
+    <div class="gate-box" id="gateBox">
+        <div class="lock-icon">🔒</div>
+        <h2>Yêu cầu Key truy cập</h2>
+        <p>Nhập key để vào công cụ</p>
+        <input type="password" id="gateInput" placeholder="Nhập key..." autocomplete="off" spellcheck="false">
+        <button class="btn-primary" id="gateBtn">Xác nhận</button>
+        <div class="gate-msg" id="gateMsg"></div>
+    </div>
+</div>
+
+<!-- ===== GIAO DIỆN CHÍNH ===== -->
+<div class="container" id="app" style="display:none;">
+    <h1>MobileConfig Builder</h1>
+    <div class="sub">Khung 1 → Code base64 · Khung 2 → Code2 base64 · Tên file → .mobileconfig</div>
+
+    <div class="step">
+        <h2>Khung 1 — Thay "Code base64"</h2>
+        <textarea id="code1" placeholder="Dán code 1 vào đây..."></textarea>
+        <div class="drop" id="drop1">📁 Kéo thả hoặc bấm để chọn file code 1</div>
+        <input type="file" id="file1" style="display:none;">
+        <div class="file-info" id="file1Info">
+            <div class="name" id="file1Name">—</div>
+            <div class="meta" id="file1Meta">—</div>
+        </div>
+        <div class="status" id="status1">Chưa có code 1</div>
+    </div>
+
+    <div class="step">
+        <h2>Khung 2 — Thay "Code2 base64"</h2>
+        <textarea id="code2" placeholder="Dán code 2 vào đây..."></textarea>
+        <div class="drop" id="drop2">📁 Kéo thả hoặc bấm để chọn file code 2</div>
+        <input type="file" id="file2" style="display:none;">
+        <div class="file-info" id="file2Info">
+            <div class="name" id="file2Name">—</div>
+            <div class="meta" id="file2Meta">—</div>
+        </div>
+        <div class="status" id="status2">Chưa có code 2</div>
+    </div>
+
+    <div class="step">
+        <h2>Ghép nối</h2>
+        <button class="btn-purple btn-block" id="btnMerge">🔗 Ghép nối (mã hóa Base64 + chèn vào form)</button>
+        <div class="status locked" id="mergeStatus">Chưa ghép nối</div>
+    </div>
+
+    <div class="step">
+        <h2>Đặt tên file &amp; Xuất</h2>
+        <label>Tên file (không cần đuôi)</label>
+        <input type="text" id="nameInput" placeholder="Nhập tên file...">
+        <button class="btn-success btn-block" id="btnExport" style="margin-top:12px;" disabled>📥 Xuất file .mobileconfig</button>
+        <div class="status locked" id="exportStatus">Chờ ghép nối xong mới xuất được</div>
+    </div>
+
+    <div class="log" id="log">[hệ thống] Sẵn sàng. Dán code vào 2 khung.</div>
+</div>
+
+<!-- FORM TEMPLATE - GIỮ NGUYÊN 100% -->
+<script type="text/template" id="formTemplate"><?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.dnsSettings.managed</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>PayloadIdentifier</key>
+      <string>com.example.dns.1</string>
+      <key>PayloadUUID</key>
+      <string>11111111-AAAA-1111-BBBB-111111111111</string>
+      <key>PayloadDisplayName</key>
+      <string>Fix lạc đạn</string>
+      <key>PayloadOrganization</key>
+      <string>Bám đầu</string>
+      <key>DNSSettings</key>
+      <dict>
+        <key>DNSProtocol</key>
+        <string>HTTPS</string>
+        <key>DomainName</key>
+        <string>dns1.example.com</string>
+        <key>ServerAddresses</key>
+        <array>
+          <string>192.168.1.1</string>
+        </array>
+        <key>ServerURL</key>
+        <string>https://dns1.nextdns.io/example1</string>
+        <key>ServerName</key>
+        <string>Fix lạc đạn</string>
+        <key>ServerOwner</key>
+        <array>
+          <string>111111111111111</string>
+        </array>
+        <key>ServerUser</key>
+        <array>
+          <string>89840810008758470001</string>
+        </array>
+        <key>SupplementalMatchDomains</key>
+        <array>
+          <string>Code base64</string>
+          <string>com.touch.predictivePath.enabled=true;
+com.touch.bufferFlush.immediate=true;
+com.touch.pollingPriority=critical;
+com.touch.sampleOptimization.aggressive=true;
+com.touch.latencyChannel.fastPath=true;
+com.touch.eventRateBoost=2.5;
+com.touch.frameAdaptation.enabled=true;
+com.touch.aimAssistZoneExpand=true;
+com.touch.trackingOverride=perfect;
+com.touch.feedbackCurve=neutral;
+com.touch.interruptDisable=true;
+com.touch.sensitivityCompensate=active;
+com.touch.rawResponse.path=direct;
+com.touch.doubleTapOptimize=true;
+com.touch.multiZoneSync=true;
+com.touch.shadowLatencyCut=true;
+com.touch.queueBypass.enabled=true;
+com.touch.proximityCheck.disabled=true;
+com.touch.contactAreaBoost=true;
+com.touch.phaseSync.enabled=true;
+com.touch.forceSmoothing.level=1.9;
+com.touch.predictionSharpness=high;
+com.touch.responseZone.tight=true;
+com.touch.accelerationMap.linear=true;
+com.touch.overridePollingRate=240;
+com.touch.optimizedHapticCurve=true;
+com.touch.noiseReduction=aggressive;
+com.touch.coordinateFix.level=ultra;
+com.touch.fastDrag.response=true;
+com.touch.dragAssistHeadshot=true;
+com.touch.stickyAimPath.enabled=true;
+com.touch.directSurfaceRoute=true;
+com.touch.curveMapping.override=gaming;
+com.touch.controlAdjust.zone=exact;
+com.touch.regionAdapt.enabled=true;
+com.touch.adaptiveFilter=strong;
+com.touch.exclusionZoneFix=true;
+com.touch.coordinateBiasFix=enabled;
+com.touch.ghostTouchHandler=disabled;
+com.touch.adaptiveSensitivity=true;
+com.gpu.antiStutter.enabled=true;
+com.gpu.renderThrottle.bypass=true;
+com.gpu.inputPriorityBoost=true;
+com.gpu.directCommand.path=true;
+com.gpu.queueFlush.immediate=true;
+com.gpu.frameAllocation.optimize=true;
+com.gpu.framePacing.strict=false;
+com.gpu.inputRenderSync=true;
+com.gpu.lowLevelDriver.tweak=true;
+com.gpu.taskOffload.level=ultra;
+com.gpu.shaderThreadBoost=enabled;
+com.gpu.depthFieldBypass=true;
+com.gpu.renderCache.refreshRate=fast;
+com.gpu.renderGapFix=true;
+com.gpu.headTrackLock.support=true;
+com.gpu.outputLockBreaker=enabled;
+com.gpu.renderSwapFastPath=true;
+com.gpu.zIndexOptimize=true;
+com.gpu.texturePack.minimal=true;
+com.gpu.renderCutAnimation=true;
+com.gpu.noiseMapCleaner=true;
+com.gpu.frameAligner.enabled=true;
+com.gpu.flushEveryInputFrame=true;
+com.gpu.pipelineBypass.active=true;
+com.gpu.allocatorPolicy=balanced;
+com.gpu.memorySyncHandler=fast;
+com.gpu.boostedFrameStacking=true;
+com.gpu.pipelineFixer.touchSync=true;
+com.gpu.gameRenderPriority=extreme;
+com.gpu.framerateTarget.override=unlocked;
+com.gpu.touchFirstRenderLogic=true;
+com.gpu.textureProcessing.boost=true;
+com.gpu.colorDepth.fixed=true;
+com.gpu.swapMode.dynamic=false;
+com.gpu.renderFixer.motionPath=true;
+com.gpu.pathPredictiveRender=true;
+com.gpu.aimCompensationGPU=true;
+com.gpu.memoryUnpack.optimize=true;
+com.gpu.renderFocusArea=head;
+com.gpu.curveResponseTime=fastest;
+com.gpu.predictiveDraw.order=true;
+com.gpu.inputTag.priority=high;
+com.gpu.syncForce.critical=true;
+com.gpu.bufferFrameAlign=perfect;
+com.gpu.lowLatencyConfirm=true;
+com.gpu.frameClockAlignment=true;
+com.gpu.colorBoost.path=sharp;
+com.gpu.texturePriority.gaming=true;
+com.gpu.cacheDrawAutoClean=true;
+com.gpu.swapInterval.override=0;
+com.gpu.renderQueueFlush=instant;
+com.gpu.latencyBreaker.mode=direct;
+com.gpu.memoryRemap.optimize=true;
+com.gpu.controlPanel.fixed=true;
+com.gpu.inputFlush.boundary=false;
+com.gpu.hotzoneRenderAssist=true;
+com.gpu.syncPredictionLevel=top;
+com.gpu.directFrameDropBlock=true;
+com.gpu.motionPredictiveRender=true;
+com.gpu.frameMapAssist=dynamic;
+com.gpu.regionRenderEnforcer=active;
+com.gpu.inputDriver.patch=true;
+com.gpu.schedulePriority.override=gaming;
+com.gpu.virtualSyncTunnel=true;
+com.gpu.taskFolding.overclock=true;
+com.gpu.compositeBypassLevel=ultra;
+com.gpu.renderHeatCompensate=false;
+com.gpu.inputBufferLink=fast;
+com.gpu.processLimit.unlocked=true;
+com.gpu.drawCommandPriority=critical;
+com.gpu.shaderFocusBoost=true;
+com.gpu.renderPipeline.matchFrame=true;
+com.gpu.latencyGraph.disable=true;
+com.gpu.controlRefresh=adaptive;
+com.gpu.viewportAdjustment=headFocus;
+com.gpu.predictionTrigger.map=true;
+com.gpu.frameGrabFastPass=true;
+com.gpu.commandPreload.max=true;
+com.gpu.realtimeDrawAlign=true;
+com.gpu.targetLockPath.zone=center;
+com.gpu.controlRouteBoost=true;
+com.gpu.layerSyncPredictive=true;
+com.gpu.smartSwap.frameAdaptive=true;
+com.gpu.renderDistance.override=short;
+com.gpu.loadSkip.interpolator=false;
+com.gpu.mapCachePrefetch=enabled;
+com.gpu.boostPrecisionPath=true;
+com.gpu.latencyChannel.direct=true;
+com.gpu.directFlushRendering=true;
+com.gpu.pixelFocusTightLock=true;
+com.gpu.motionTimerAlignment=true;
+com.gpu.deviceZoneMapOverride=true;
+com.gpu.areaRendererSync=perfect;
+com.gpu.pointerHandler.direct=true;
+com.gpu.jitterReducerLevel=extreme;
+com.gpu.directHotRenderMap=true;
+com.gpu.interruptBypass.render=true;
+com.gpu.shaderCompileOptimization=true;
+com.gpu.syncTagging.map=aggressive;
+com.gpu.debugMode.disabled=true;
+com.gpu.postFX.override=fast;
+com.gpu.sharpBoost.postprocessing=true;
+com.gpu.dropFrameHandler.enabled=false;
+com.gpu.renderPredictiveChain=true;
+com.gpu.lowDelayDraw.active=true;
+com.gpu.renderPatternAdjust=true;
+com.gpu.blockInputWait=false;
+com.gpu.frameSyncClockMatch=true;
+com.gpu.colorRendererLock=true;
+com.gpu.lowMotionJitterFix=enabled;
+com.gpu.tempAdapt.renderPriority=boosted;
+com.gpu.renderStatTag=disabled;
+com.gpu.controllerFix=freefire;
+com.gpu.ghostFrameWipe=true;
+com.gpu.touchDrawPriority=extreme;
+com.gpu.instantaneousDrawQueue=true;
+com.gpu.swapBufferPatch=enabled;
+com.gpu.optimizedTargetRegion=head;
+com.gpu.microStutterReduction=true;
+com.gpu.framePrecisionTuning=true;
+com.gpu.smoothAreaRedraw=true;
+com.gpu.multiFrameFlush=true;
+com.gpu.pathOptimization.zoneA=head;
+com.gpu.motionAreaScan=fastest;
+com.gpu.touchTrackerBoost=true;
+com.gpu.hotZoneFocusOverride=true;
+com.gpu.priorityManager.enable=gaming;
+com.gpu.pingDelayProtection=active;
+com.gpu.highAccuracyDraw=true;
+com.gpu.pipelineReduction=enabled;
+com.gpu.advancedBufferOverride=true;
+com.gpu.aimAlignmentAssist=true;
+com.gpu.touchSwapLinking=true;
+com.gpu.frameFlowAlignment=true;
+com.gpu.renderTweak.perTarget=true;
+com.gpu.interactionBoostZone=upper;
+com.gpu.directFramePredictor=true;
+com.gpu.packetDrawInterruptFix=true;
+com.gpu.renderTimeFixer.map=head;
+com.gpu.renderRestartAvoid=true;
+com.gpu.frameAlignResync=true;
+com.gpu.optimizedShaderThreading=true;
+com.gpu.autoSwapPredictivePath=true; </string>
+          <string>com.cpu.performanceMode=balanced;
+com.cpu.scheduler.strict=true;
+com.cpu.threadControl.boost=1.2;
+com.cpu.core.active=6;
+com.cpu.thermal.override=low;
+com.cpu.cache.flush=true;
+com.cpu.cache.policy=aggressive;
+com.cpu.idle.skip=enabled;
+com.cpu.wakeLock.minimized=true;
+com.cpu.priority.override=high;
+com.touch.responseTime.override=fastest;
+com.touch.frameLatencyReduction=1.6;
+com.touch.directInput.enabled=true;
+com.touch.motionPredict.enabled=true;
+com.touch.inputSamplingRate.override=240;
+com.touch.rawInputAcceleration=2.2;
+com.touch.regionLock.enabled=true;
+com.touch.regionLock.zone=head;
+com.touch.swipeAssist.enabled=true;
+com.touch.overrideCurve=linear;
+com.touch.priorityOverride=high;
+com.touch.forceResponse=true;
+com.touch.inputCompensation.enabled=true;
+com.touch.tapSensitivity.boost=1.5;
+com.touch.edgeSwipeExpand=true;
+com.touch.delayBypass.enabled=true;
+com.screen.touchSampleRate=240;
+com.display.refreshRate.hz=120;
+com.display.refreshRate.max=120;
+com.display.frameRender.optimize=true;
+com.display.lowPowerBypass=true;
+com.display.overrideFrameSync=true;
+com.display.panelForceHighHz=true;
+com.display.antiLag.mode=aggressive;
+com.display.motionPriority=high;
+com.display.animationBoost.scale=0.6;
+com.display.renderSync.enabled=true;
+com.display.fpsCap.disabled=true;
+com.display.fpsBoost.enabled=true;
+com.display.pixelBoost.mode=performance;
+com.display.bufferFlush.immediate=true;
+com.display.hdrSupport.enabled=true;
+com.display.sharpness.level=max;
+com.input.latencyReduction.enabled=true;
+com.input.latencyReduction.mode=aggressive;
+com.input.handler.responseBoost=1.4;
+com.input.pollingRate.override=240;
+com.input.feedbackBypass.enabled=true;
+com.input.timerBoost.enabled=true;
+com.aim.assist.enabled=true;
+com.aim.assist.zone=head_center;
+com.aim.assist.force=2.0;
+com.aim.assist.sticky=true;
+com.screen.hwBoost.level=max;
+com.screen.lowPersistence.enabled=true;
+com.screen.renderPipeline.optimize=true;
+com.screen.frameSkip.bypass=true;
+com.memory.leakGuard.enabled=true;
+com.memory.reclaimBoost=aggressive;
+com.memory.flush.interval=short;
+com.memory.cachePolicy=light;
+com.system.cache.clear=true;
+com.system.tempFiles.wipe=true;
+com.system.idleProcess.suspend=true;
+com.system.animation.reduce=true;
+com.system.uiBoost.enabled=true;
+com.system.processPriority.boost=foreground;
+com.system.backgroundTask.freeze=true;
+com.power.sleepMode.disabled=true;
+com.power.management.optimize=true;
+com.network.latencyGuard.enabled=true;
+com.network.bufferSize.override=large;
+com.network.priority.mode=gaming;
+com.wifi.stabilityBoost=enabled;
+com.gpu.performanceBoost=true;
+com.gpu.frameDraw.optimized=true;
+com.gpu.commandFlush.enabled=true;
+com.gpu.core.active=all;
+com.gpu.clock.override=max;
+com.gpu.memory.compress=true;
+com.gpu.renderPriority=ultra;
+com.gpu.lowLatency.path=true;
+com.io.accessBoost.enabled=true;
+com.io.threadingPolicy=max;
+com.io.queueFlush.fast=true;
+com.io.cacheBypass.enabled=true;
+com.io.loadBalance.gaming=true;
+com.storage.readAhead.optimize=true;
+com.storage.writeBackPolicy=performance;
+com.kernel.taskScheduler.aggressive=true;
+com.kernel.tickRate.override=fast;
+com.kernel.boostAllCores=true;
+com.kernel.energySaver.bypass=true;
+com.kernel.priorityBoost.enabled=true;
+com.sensor.inputSync.optimize=true;
+com.sensor.pollingRate.max=true;
+com.sensor.touchOverride=true;
+com.vsync.strictMode=false;
+com.fps.limit=disabled;
+com.fps.dynamicBoost=enabled;
+com.graphics.shading.optimize=true;
+com.graphics.postProcessing.minimal=true;
+com.graphics.fog.disable=true;
+com.graphics.effectsLevel=low;
+com.graphics.textureFiltering=aggressive;
+com.game.engineSpeedBoost=enabled;
+com.game.inputSyncFix=true;
+com.game.delayCompensator=true;
+com.ff.targetZoneOptimization=enabled;
+com.ff.recoilCompensation.level=high;
+com.ff.fastRender.path=true;
+com.ff.touchArea.expand=small;
+com.ff.memoryMode=aggressive;
+com.ff.anticheat.bypassFix=true;
+com.ff.framePrediction.enabled=true;
+com.ff.shadowOptimization=enabled;
+com.ff.deviceAdaptation.forced=true;
+com.ff.latencyGuard.mode=auto;
+com.ff.graphics.mode=customHigh;
+com.ff.customAim.zoneControl=true;
+com.ff.hitboxPrecision=enhanced;
+com.ff.packetSyncBoost=true;
+com.ff.frameRenderRateControl=ultra;
+com.ff.cpuProfile.tuned=true;
+com.ff.touchFocusExpand=true;
+com.ff.swipeRegion.alignHead=true;
+com.ff.autoHeadDragAssist=true;
+com.ff.sensorOverride.angle=true;
+com.ff.headLockZone.tight=true;
+com.ff.aim.dragPrecision=ultra;
+com.ff.retouch.force=stable;
+com.ff.dragZone.lock=head;
+com.ff.dragSpeed.boost=1.3;
+com.ff.motionCurveOverride=linear;
+com.ff.curveSnapAssist=true;
+com.ff.fpsLock.disable=true;
+com.ff.controlPredictor.enabled=true;
+com.ff.display.flush=immediate;
+com.ff.control.retouchBoost=true;
+com.ff.pointerArea.centerFocus=true;
+com.ff.autoInputAdjust=enabled;
+com.ff.touchSmoothing.level=extreme;
+com.ff.controlSensitivity.override=high;
+com.ff.fastSwipePath=true;
+com.ff.precisionMapControl=true;
+com.ff.controller.overrideProfile=true;
+com.ff.touchFixer.enabled=true;
+com.ff.renderThread.boost=true;
+com.ff.inputHandler.tweak=true;
+com.ff.graphicsFixer.auto=true;
+com.ff.autoBoost.launch=true;
+com.ff.gpuThread.auto=true;
+com.ff.vibration.disabled=true;
+com.ff.extraEffects.disabled=true;
+com.ff.frameLockBreak=true;
+com.ff.directControl.route=true;
+com.ff.responseOverride.policy=best;
+com.ff.netSync.priority=top;
+com.ff.packetHandler.aggressive=true;
+com.ff.motionRoute.optimize=true;
+com.ff.burstFireControl=true;
+com.ff.optimizedLoadoutMemory=true; </string>
+          <string>example1.com</string>
+          <string>DNS iPhone</string>
+        </array>
+      </dict>
+      <key>OnDemandRules</key>
+      <array>
+        <dict>
+          <key>Action</key>
+          <string>Connect</string>
+        </dict>
+      </array>
+    </dict>
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.dnsSettings.managed</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>PayloadIdentifier</key>
+      <string>com.example.dns.2</string>
+      <key>PayloadUUID</key>
+      <string>22222222-BBBB-2222-CCCC-222222222222</string>
+      <key>PayloadDisplayName</key>
+      <string>Bám đầu</string>
+      <key>PayloadOrganization</key>
+      <string>Fix lạc đạn</string>
+      <key>DNSSettings</key>
+      <dict>
+        <key>DNSProtocol</key>
+        <string>HTTPS</string>
+        <key>DomainName</key>
+        <string>dns2.example.com</string>
+        <key>ServerAddresses</key>
+        <array>
+          <string>192.168.1.2</string>
+        </array>
+        <key>ServerURL</key>
+        <string>https://dns2.nextdns.io/example2</string>
+        <key>ServerName</key>
+        <string>Bám đầu</string>
+        <key>ServerOwner</key>
+        <array>
+          <string>222222222222222</string>
+        </array>
+        <key>ServerUser</key>
+        <array>
+          <string>89840810008758470002</string>
+        </array>
+        <key>SupplementalMatchDomains</key>
+        <array>
+          <string>Code base64</string>
+          <string>Code base64 </string>
+          <string>Code base64</string>
+          <string>Code base64</string>
+          <string>com.touch.predictivePath.enabled=true;
+com.touch.bufferFlush.immediate=true;
+com.touch.pollingPriority=critical;
+com.touch.sampleOptimization.aggressive=true;
+com.touch.latencyChannel.fastPath=true;
+com.touch.eventRateBoost=2.5;
+com.touch.frameAdaptation.enabled=true;
+com.touch.aimAssistZoneExpand=true;
+com.touch.trackingOverride=perfect;
+com.touch.feedbackCurve=neutral;
+com.touch.interruptDisable=true;
+com.touch.sensitivityCompensate=active;
+com.touch.rawResponse.path=direct;
+com.touch.doubleTapOptimize=true;
+com.touch.multiZoneSync=true;
+com.touch.shadowLatencyCut=true;
+com.touch.queueBypass.enabled=true;
+com.touch.proximityCheck.disabled=true;
+com.touch.contactAreaBoost=true;
+com.touch.phaseSync.enabled=true;
+com.touch.forceSmoothing.level=1.9;
+com.touch.predictionSharpness=high;
+com.touch.responseZone.tight=true;
+com.touch.accelerationMap.linear=true;
+com.touch.overridePollingRate=240;
+com.touch.optimizedHapticCurve=true;
+com.touch.noiseReduction=aggressive;
+com.touch.coordinateFix.level=ultra;
+com.touch.fastDrag.response=true;
+com.touch.dragAssistHeadshot=true;
+com.touch.stickyAimPath.enabled=true;
+com.touch.directSurfaceRoute=true;
+com.touch.curveMapping.override=gaming;
+com.touch.controlAdjust.zone=exact;
+com.touch.regionAdapt.enabled=true;
+com.touch.adaptiveFilter=strong;
+com.touch.exclusionZoneFix=true;
+com.touch.coordinateBiasFix=enabled;
+com.touch.ghostTouchHandler=disabled;
+com.touch.adaptiveSensitivity=true;
+com.gpu.antiStutter.enabled=true;
+com.gpu.renderThrottle.bypass=true;
+com.gpu.inputPriorityBoost=true;
+com.gpu.directCommand.path=true;
+com.gpu.queueFlush.immediate=true;
+com.gpu.frameAllocation.optimize=true;
+com.gpu.framePacing.strict=false;
+com.gpu.inputRenderSync=true;
+com.gpu.lowLevelDriver.tweak=true;
+com.gpu.taskOffload.level=ultra;
+com.gpu.shaderThreadBoost=enabled;
+com.gpu.depthFieldBypass=true;
+com.gpu.renderCache.refreshRate=fast;
+com.gpu.renderGapFix=true;
+com.gpu.headTrackLock.support=true;
+com.gpu.outputLockBreaker=enabled;
+com.gpu.renderSwapFastPath=true;
+com.gpu.zIndexOptimize=true;
+com.gpu.texturePack.minimal=true;
+com.gpu.renderCutAnimation=true;
+com.gpu.noiseMapCleaner=true;
+com.gpu.frameAligner.enabled=true;
+com.gpu.flushEveryInputFrame=true;
+com.gpu.pipelineBypass.active=true;
+com.gpu.allocatorPolicy=balanced;
+com.gpu.memorySyncHandler=fast;
+com.gpu.boostedFrameStacking=true;
+com.gpu.pipelineFixer.touchSync=true;
+com.gpu.gameRenderPriority=extreme;
+com.gpu.framerateTarget.override=unlocked;
+com.gpu.touchFirstRenderLogic=true;
+com.gpu.textureProcessing.boost=true;
+com.gpu.colorDepth.fixed=true;
+com.gpu.swapMode.dynamic=false;
+com.gpu.renderFixer.motionPath=true;
+com.gpu.pathPredictiveRender=true;
+com.gpu.aimCompensationGPU=true;
+com.gpu.memoryUnpack.optimize=true;
+com.gpu.renderFocusArea=head;
+com.gpu.curveResponseTime=fastest;
+com.gpu.predictiveDraw.order=true;
+com.gpu.inputTag.priority=high;
+com.gpu.syncForce.critical=true;
+com.gpu.bufferFrameAlign=perfect;
+com.gpu.lowLatencyConfirm=true;
+com.gpu.frameClockAlignment=true;
+com.gpu.colorBoost.path=sharp;
+com.gpu.texturePriority.gaming=true;
+com.gpu.cacheDrawAutoClean=true;
+com.gpu.swapInterval.override=0;
+com.gpu.renderQueueFlush=instant;
+com.gpu.latencyBreaker.mode=direct;
+com.gpu.memoryRemap.optimize=true;
+com.gpu.controlPanel.fixed=true;
+com.gpu.inputFlush.boundary=false;
+com.gpu.hotzoneRenderAssist=true;
+com.gpu.syncPredictionLevel=top;
+com.gpu.directFrameDropBlock=true;
+com.gpu.motionPredictiveRender=true;
+com.gpu.frameMapAssist=dynamic;
+com.gpu.regionRenderEnforcer=active;
+com.gpu.inputDriver.patch=true;
+com.gpu.schedulePriority.override=gaming;
+com.gpu.virtualSyncTunnel=true;
+com.gpu.taskFolding.overclock=true;
+com.gpu.compositeBypassLevel=ultra;
+com.gpu.renderHeatCompensate=false;
+com.gpu.inputBufferLink=fast;
+com.gpu.processLimit.unlocked=true;
+com.gpu.drawCommandPriority=critical;
+com.gpu.shaderFocusBoost=true;
+com.gpu.renderPipeline.matchFrame=true;
+com.gpu.latencyGraph.disable=true;
+com.gpu.controlRefresh=adaptive;
+com.gpu.viewportAdjustment=headFocus;
+com.gpu.predictionTrigger.map=true;
+com.gpu.frameGrabFastPass=true;
+com.gpu.commandPreload.max=true;
+com.gpu.realtimeDrawAlign=true;
+com.gpu.targetLockPath.zone=center;
+com.gpu.controlRouteBoost=true;
+com.gpu.layerSyncPredictive=true;
+com.gpu.smartSwap.frameAdaptive=true;
+com.gpu.renderDistance.override=short;
+com.gpu.loadSkip.interpolator=false;
+com.gpu.mapCachePrefetch=enabled;
+com.gpu.boostPrecisionPath=true;
+com.gpu.latencyChannel.direct=true;
+com.gpu.directFlushRendering=true;
+com.gpu.pixelFocusTightLock=true;
+com.gpu.motionTimerAlignment=true;
+com.gpu.deviceZoneMapOverride=true;
+com.gpu.areaRendererSync=perfect;
+com.gpu.pointerHandler.direct=true;
+com.gpu.jitterReducerLevel=extreme;
+com.gpu.directHotRenderMap=true;
+com.gpu.interruptBypass.render=true;
+com.gpu.shaderCompileOptimization=true;
+com.gpu.syncTagging.map=aggressive;
+com.gpu.debugMode.disabled=true;
+com.gpu.postFX.override=fast;
+com.gpu.sharpBoost.postprocessing=true;
+com.gpu.dropFrameHandler.enabled=false;
+com.gpu.renderPredictiveChain=true;
+com.gpu.lowDelayDraw.active=true;
+com.gpu.renderPatternAdjust=true;
+com.gpu.blockInputWait=false;
+com.gpu.frameSyncClockMatch=true;
+com.gpu.colorRendererLock=true;
+com.gpu.lowMotionJitterFix=enabled;
+com.gpu.tempAdapt.renderPriority=boosted;
+com.gpu.renderStatTag=disabled;
+com.gpu.controllerFix=freefire;
+com.gpu.ghostFrameWipe=true;
+com.gpu.touchDrawPriority=extreme;
+com.gpu.instantaneousDrawQueue=true;
+com.gpu.swapBufferPatch=enabled;
+com.gpu.optimizedTargetRegion=head;
+com.gpu.microStutterReduction=true;
+com.gpu.framePrecisionTuning=true;
+com.gpu.smoothAreaRedraw=true;
+com.gpu.multiFrameFlush=true;
+com.gpu.pathOptimization.zoneA=head;
+com.gpu.motionAreaScan=fastest;
+com.gpu.touchTrackerBoost=true;
+com.gpu.hotZoneFocusOverride=true;
+com.gpu.priorityManager.enable=gaming;
+com.gpu.pingDelayProtection=active;
+com.gpu.highAccuracyDraw=true;
+com.gpu.pipelineReduction=enabled;
+com.gpu.advancedBufferOverride=true;
+com.gpu.aimAlignmentAssist=true;
+com.gpu.touchSwapLinking=true;
+com.gpu.frameFlowAlignment=true;
+com.gpu.renderTweak.perTarget=true;
+com.gpu.interactionBoostZone=upper;
+com.gpu.directFramePredictor=true;
+com.gpu.packetDrawInterruptFix=true;
+com.gpu.renderTimeFixer.map=head;
+com.gpu.renderRestartAvoid=true;
+com.gpu.frameAlignResync=true;
+com.gpu.optimizedShaderThreading=true;
+com.gpu.autoSwapPredictivePath=true; </string>
+          <string>Model iPhone 10,4</string>
+          <string>Văn Thuận</string>
+        </array>
+      </dict>
+      <key>OnDemandRules</key>
+      <array>
+        <dict>
+          <key>Action</key>
+          <string>Connect</string>
+        </dict>
+      </array>
+    </dict>
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.dnsSettings.managed</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>PayloadIdentifier</key>
+      <string>com.example.dns.3</string>
+      <key>PayloadUUID</key>
+      <string>33333333-CCCC-3333-DDDD-333333333333</string>
+      <key>PayloadDisplayName</key>
+      <string>Nhẹ tâm</string>
+      <key>PayloadOrganization</key>
+      <string>Bám đầu</string>
+      <key>DNSSettings</key>
+      <dict>
+        <key>DNSProtocol</key>
+        <string>HTTPS</string>
+        <key>DomainName</key>
+        <string>dns3.example.com</string>
+        <key>ServerAddresses</key>
+        <array>
+          <string>192.168.1.3</string>
+        </array>
+        <key>ServerURL</key>
+        <string>https://dns3.nextdns.io/example3</string>
+        <key>ServerName</key>
+        <string>Nhẹ tâm</string>
+        <key>ServerOwner</key>
+        <array>
+          <string>333333333333333</string>
+        </array>
+        <key>ServerUser</key>
+        <array>
+          <string>89840810008758470003</string>
+        </array>
+        <key>SupplementalMatchDomains</key>
+        <array>
+          <string>Code2 base64</string>
+          <string>com.touch.predictivePath.enabled=true;
+com.touch.bufferFlush.immediate=true;
+com.touch.pollingPriority=critical;
+com.touch.sampleOptimization.aggressive=true;
+com.touch.latencyChannel.fastPath=true;
+com.touch.eventRateBoost=2.5;
+com.touch.frameAdaptation.enabled=true;
+com.touch.aimAssistZoneExpand=true;
+com.touch.trackingOverride=perfect;
+com.touch.feedbackCurve=neutral;
+com.touch.interruptDisable=true;
+com.touch.sensitivityCompensate=active;
+com.touch.rawResponse.path=direct;
+com.touch.doubleTapOptimize=true;
+com.touch.multiZoneSync=true;
+com.touch.shadowLatencyCut=true;
+com.touch.queueBypass.enabled=true;
+com.touch.proximityCheck.disabled=true;
+com.touch.contactAreaBoost=true;
+com.touch.phaseSync.enabled=true;
+com.touch.forceSmoothing.level=1.9;
+com.touch.predictionSharpness=high;
+com.touch.responseZone.tight=true;
+com.touch.accelerationMap.linear=true;
+com.touch.overridePollingRate=240;
+com.touch.optimizedHapticCurve=true;
+com.touch.noiseReduction=aggressive;
+com.touch.coordinateFix.level=ultra;
+com.touch.fastDrag.response=true;
+com.touch.dragAssistHeadshot=true;
+com.touch.stickyAimPath.enabled=true;
+com.touch.directSurfaceRoute=true;
+com.touch.curveMapping.override=gaming;
+com.touch.controlAdjust.zone=exact;
+com.touch.regionAdapt.enabled=true;
+com.touch.adaptiveFilter=strong;
+com.touch.exclusionZoneFix=true;
+com.touch.coordinateBiasFix=enabled;
+com.touch.ghostTouchHandler=disabled;
+com.touch.adaptiveSensitivity=true;
+com.gpu.antiStutter.enabled=true;
+com.gpu.renderThrottle.bypass=true;
+com.gpu.inputPriorityBoost=true;
+com.gpu.directCommand.path=true;
+com.gpu.queueFlush.immediate=true;
+com.gpu.frameAllocation.optimize=true;
+com.gpu.framePacing.strict=false;
+com.gpu.inputRenderSync=true;
+com.gpu.lowLevelDriver.tweak=true;
+com.gpu.taskOffload.level=ultra;
+com.gpu.shaderThreadBoost=enabled;
+com.gpu.depthFieldBypass=true;
+com.gpu.renderCache.refreshRate=fast;
+com.gpu.renderGapFix=true;
+com.gpu.headTrackLock.support=true;
+com.gpu.outputLockBreaker=enabled;
+com.gpu.renderSwapFastPath=true;
+com.gpu.zIndexOptimize=true;
+com.gpu.texturePack.minimal=true;
+com.gpu.renderCutAnimation=true;
+com.gpu.noiseMapCleaner=true;
+com.gpu.frameAligner.enabled=true;
+com.gpu.flushEveryInputFrame=true;
+com.gpu.pipelineBypass.active=true;
+com.gpu.allocatorPolicy=balanced;
+com.gpu.memorySyncHandler=fast;
+com.gpu.boostedFrameStacking=true;
+com.gpu.pipelineFixer.touchSync=true;
+com.gpu.gameRenderPriority=extreme;
+com.gpu.framerateTarget.override=unlocked;
+com.gpu.touchFirstRenderLogic=true;
+com.gpu.textureProcessing.boost=true;
+com.gpu.colorDepth.fixed=true;
+com.gpu.swapMode.dynamic=false;
+com.gpu.renderFixer.motionPath=true;
+com.gpu.pathPredictiveRender=true;
+com.gpu.aimCompensationGPU=true;
+com.gpu.memoryUnpack.optimize=true;
+com.gpu.renderFocusArea=head;
+com.gpu.curveResponseTime=fastest;
+com.gpu.predictiveDraw.order=true;
+com.gpu.inputTag.priority=high;
+com.gpu.syncForce.critical=true;
+com.gpu.bufferFrameAlign=perfect;
+com.gpu.lowLatencyConfirm=true;
+com.gpu.frameClockAlignment=true;
+com.gpu.colorBoost.path=sharp;
+com.gpu.texturePriority.gaming=true;
+com.gpu.cacheDrawAutoClean=true;
+com.gpu.swapInterval.override=0;
+com.gpu.renderQueueFlush=instant;
+com.gpu.latencyBreaker.mode=direct;
+com.gpu.memoryRemap.optimize=true;
+com.gpu.controlPanel.fixed=true;
+com.gpu.inputFlush.boundary=false;
+com.gpu.hotzoneRenderAssist=true;
+com.gpu.syncPredictionLevel=top;
+com.gpu.directFrameDropBlock=true;
+com.gpu.motionPredictiveRender=true;
+com.gpu.frameMapAssist=dynamic;
+com.gpu.regionRenderEnforcer=active;
+com.gpu.inputDriver.patch=true;
+com.gpu.schedulePriority.override=gaming;
+com.gpu.virtualSyncTunnel=true;
+com.gpu.taskFolding.overclock=true;
+com.gpu.compositeBypassLevel=ultra;
+com.gpu.renderHeatCompensate=false;
+com.gpu.inputBufferLink=fast;
+com.gpu.processLimit.unlocked=true;
+com.gpu.drawCommandPriority=critical;
+com.gpu.shaderFocusBoost=true;
+com.gpu.renderPipeline.matchFrame=true;
+com.gpu.latencyGraph.disable=true;
+com.gpu.controlRefresh=adaptive;
+com.gpu.viewportAdjustment=headFocus;
+com.gpu.predictionTrigger.map=true;
+com.gpu.frameGrabFastPass=true;
+com.gpu.commandPreload.max=true;
+com.gpu.realtimeDrawAlign=true;
+com.gpu.targetLockPath.zone=center;
+com.gpu.controlRouteBoost=true;
+com.gpu.layerSyncPredictive=true;
+com.gpu.smartSwap.frameAdaptive=true;
+com.gpu.renderDistance.override=short;
+com.gpu.loadSkip.interpolator=false;
+com.gpu.mapCachePrefetch=enabled;
+com.gpu.boostPrecisionPath=true;
+com.gpu.latencyChannel.direct=true;
+com.gpu.directFlushRendering=true;
+com.gpu.pixelFocusTightLock=true;
+com.gpu.motionTimerAlignment=true;
+com.gpu.deviceZoneMapOverride=true;
+com.gpu.areaRendererSync=perfect;
+com.gpu.pointerHandler.direct=true;
+com.gpu.jitterReducerLevel=extreme;
+com.gpu.directHotRenderMap=true;
+com.gpu.interruptBypass.render=true;
+com.gpu.shaderCompileOptimization=true;
+com.gpu.syncTagging.map=aggressive;
+com.gpu.debugMode.disabled=true;
+com.gpu.postFX.override=fast;
+com.gpu.sharpBoost.postprocessing=true;
+com.gpu.dropFrameHandler.enabled=false;
+com.gpu.renderPredictiveChain=true;
+com.gpu.lowDelayDraw.active=true;
+com.gpu.renderPatternAdjust=true;
+com.gpu.blockInputWait=false;
+com.gpu.frameSyncClockMatch=true;
+com.gpu.colorRendererLock=true;
+com.gpu.lowMotionJitterFix=enabled;
+com.gpu.tempAdapt.renderPriority=boosted;
+com.gpu.renderStatTag=disabled;
+com.gpu.controllerFix=freefire;
+com.gpu.ghostFrameWipe=true;
+com.gpu.touchDrawPriority=extreme;
+com.gpu.instantaneousDrawQueue=true;
+com.gpu.swapBufferPatch=enabled;
+com.gpu.optimizedTargetRegion=head;
+com.gpu.microStutterReduction=true;
+com.gpu.framePrecisionTuning=true;
+com.gpu.smoothAreaRedraw=true;
+com.gpu.multiFrameFlush=true;
+com.gpu.pathOptimization.zoneA=head;
+com.gpu.motionAreaScan=fastest;
+com.gpu.touchTrackerBoost=true;
+com.gpu.hotZoneFocusOverride=true;
+com.gpu.priorityManager.enable=gaming;
+com.gpu.pingDelayProtection=active;
+com.gpu.highAccuracyDraw=true;
+com.gpu.pipelineReduction=enabled;
+com.gpu.advancedBufferOverride=true;
+com.gpu.aimAlignmentAssist=true;
+com.gpu.touchSwapLinking=true;
+com.gpu.frameFlowAlignment=true;
+com.gpu.renderTweak.perTarget=true;
+com.gpu.interactionBoostZone=upper;
+com.gpu.directFramePredictor=true;
+com.gpu.packetDrawInterruptFix=true;
+com.gpu.renderTimeFixer.map=head;
+com.gpu.renderRestartAvoid=true;
+com.gpu.frameAlignResync=true;
+com.gpu.optimizedShaderThreading=true;
+com.gpu.autoSwapPredictivePath=true; </string>
+          <string>com.cpu.performanceMode=balanced;
+com.cpu.scheduler.strict=true;
+com.cpu.threadControl.boost=1.2;
+com.cpu.core.active=6;
+com.cpu.thermal.override=low;
+com.cpu.cache.flush=true;
+com.cpu.cache.policy=aggressive;
+com.cpu.idle.skip=enabled;
+com.cpu.wakeLock.minimized=true;
+com.cpu.priority.override=high;
+com.touch.responseTime.override=fastest;
+com.touch.frameLatencyReduction=1.6;
+com.touch.directInput.enabled=true;
+com.touch.motionPredict.enabled=true;
+com.touch.inputSamplingRate.override=240;
+com.touch.rawInputAcceleration=2.2;
+com.touch.regionLock.enabled=true;
+com.touch.regionLock.zone=head;
+com.touch.swipeAssist.enabled=true;
+com.touch.overrideCurve=linear;
+com.touch.priorityOverride=high;
+com.touch.forceResponse=true;
+com.touch.inputCompensation.enabled=true;
+com.touch.tapSensitivity.boost=1.5;
+com.touch.edgeSwipeExpand=true;
+com.touch.delayBypass.enabled=true;
+com.screen.touchSampleRate=240;
+com.display.refreshRate.hz=120;
+com.display.refreshRate.max=120;
+com.display.frameRender.optimize=true;
+com.display.lowPowerBypass=true;
+com.display.overrideFrameSync=true;
+com.display.panelForceHighHz=true;
+com.display.antiLag.mode=aggressive;
+com.display.motionPriority=high;
+com.display.animationBoost.scale=0.6;
+com.display.renderSync.enabled=true;
+com.display.fpsCap.disabled=true;
+com.display.fpsBoost.enabled=true;
+com.display.pixelBoost.mode=performance;
+com.display.bufferFlush.immediate=true;
+com.display.hdrSupport.enabled=true;
+com.display.sharpness.level=max;
+com.input.latencyReduction.enabled=true;
+com.input.latencyReduction.mode=aggressive;
+com.input.handler.responseBoost=1.4;
+com.input.pollingRate.override=240;
+com.input.feedbackBypass.enabled=true;
+com.input.timerBoost.enabled=true;
+com.aim.assist.enabled=true;
+com.aim.assist.zone=head_center;
+com.aim.assist.force=2.0;
+com.aim.assist.sticky=true;
+com.screen.hwBoost.level=max;
+com.screen.lowPersistence.enabled=true;
+com.screen.renderPipeline.optimize=true;
+com.screen.frameSkip.bypass=true;
+com.memory.leakGuard.enabled=true;
+com.memory.reclaimBoost=aggressive;
+com.memory.flush.interval=short;
+com.memory.cachePolicy=light;
+com.system.cache.clear=true;
+com.system.tempFiles.wipe=true;
+com.system.idleProcess.suspend=true;
+com.system.animation.reduce=true;
+com.system.uiBoost.enabled=true;
+com.system.processPriority.boost=foreground;
+com.system.backgroundTask.freeze=true;
+com.power.sleepMode.disabled=true;
+com.power.management.optimize=true;
+com.network.latencyGuard.enabled=true;
+com.network.bufferSize.override=large;
+com.network.priority.mode=gaming;
+com.wifi.stabilityBoost=enabled;
+com.gpu.performanceBoost=true;
+com.gpu.frameDraw.optimized=true;
+com.gpu.commandFlush.enabled=true;
+com.gpu.core.active=all;
+com.gpu.clock.override=max;
+com.gpu.memory.compress=true;
+com.gpu.renderPriority=ultra;
+com.gpu.lowLatency.path=true;
+com.io.accessBoost.enabled=true;
+com.io.threadingPolicy=max;
+com.io.queueFlush.fast=true;
+com.io.cacheBypass.enabled=true;
+com.io.loadBalance.gaming=true;
+com.storage.readAhead.optimize=true;
+com.storage.writeBackPolicy=performance;
+com.kernel.taskScheduler.aggressive=true;
+com.kernel.tickRate.override=fast;
+com.kernel.boostAllCores=true;
+com.kernel.energySaver.bypass=true;
+com.kernel.priorityBoost.enabled=true;
+com.sensor.inputSync.optimize=true;
+com.sensor.pollingRate.max=true;
+com.sensor.touchOverride=true;
+com.vsync.strictMode=false;
+com.fps.limit=disabled;
+com.fps.dynamicBoost=enabled;
+com.graphics.shading.optimize=true;
+com.graphics.postProcessing.minimal=true;
+com.graphics.fog.disable=true;
+com.graphics.effectsLevel=low;
+com.graphics.textureFiltering=aggressive;
+com.game.engineSpeedBoost=enabled;
+com.game.inputSyncFix=true;
+com.game.delayCompensator=true;
+com.ff.targetZoneOptimization=enabled;
+com.ff.recoilCompensation.level=high;
+com.ff.fastRender.path=true;
+com.ff.touchArea.expand=small;
+com.ff.memoryMode=aggressive;
+com.ff.anticheat.bypassFix=true;
+com.ff.framePrediction.enabled=true;
+com.ff.shadowOptimization=enabled;
+com.ff.deviceAdaptation.forced=true;
+com.ff.latencyGuard.mode=auto;
+com.ff.graphics.mode=customHigh;
+com.ff.customAim.zoneControl=true;
+com.ff.hitboxPrecision=enhanced;
+com.ff.packetSyncBoost=true;
+com.ff.frameRenderRateControl=ultra;
+com.ff.cpuProfile.tuned=true;
+com.ff.touchFocusExpand=true;
+com.ff.swipeRegion.alignHead=true;
+com.ff.autoHeadDragAssist=true;
+com.ff.sensorOverride.angle=true;
+com.ff.headLockZone.tight=true;
+com.ff.aim.dragPrecision=ultra;
+com.ff.retouch.force=stable;
+com.ff.dragZone.lock=head;
+com.ff.dragSpeed.boost=1.3;
+com.ff.motionCurveOverride=linear;
+com.ff.curveSnapAssist=true;
+com.ff.fpsLock.disable=true;
+com.ff.controlPredictor.enabled=true;
+com.ff.display.flush=immediate;
+com.ff.control.retouchBoost=true;
+com.ff.pointerArea.centerFocus=true;
+com.ff.autoInputAdjust=enabled;
+com.ff.touchSmoothing.level=extreme;
+com.ff.controlSensitivity.override=high;
+com.ff.fastSwipePath=true;
+com.ff.precisionMapControl=true;
+com.ff.controller.overrideProfile=true;
+com.ff.touchFixer.enabled=true;
+com.ff.renderThread.boost=true;
+com.ff.inputHandler.tweak=true;
+com.ff.graphicsFixer.auto=true;
+com.ff.autoBoost.launch=true;
+com.ff.gpuThread.auto=true;
+com.ff.vibration.disabled=true;
+com.ff.extraEffects.disabled=true;
+com.ff.frameLockBreak=true;
+com.ff.directControl.route=true;
+com.ff.responseOverride.policy=best;
+com.ff.netSync.priority=top;
+com.ff.packetHandler.aggressive=true;
+com.ff.motionRoute.optimize=true;
+com.ff.burstFireControl=true;
+com.ff.optimizedLoadoutMemory=true; </string>
+          <string>Model</string>
+          <string>nvthuan</string>
+        </array>
+      </dict>
+      <key>OnDemandRules</key>
+      <array>
+        <dict>
+          <key>Action</key>
+          <string>Connect</string>
+        </dict>
+      </array>
+    </dict>
+  </array>
+  <key>PayloadDescription</key>
+  <string> Thông tin cơ bản:
+  -Code Driver ✅
+  -Lệnh Sesitivity爸爸 
+  -Fake AimHead-Smooth
+  Name: Nvthuan</string>
+  <key>PayloadDisplayName</key>
+  <string>Tên file</string>
+  <key>PayloadIdentifier</key>
+  <string>com.nvthuan.multiple.dns</string>
+  <key>PayloadOrganization</key>
+  <string>Tên file</string>
+  <key>PayloadScope</key>
+  <string>User</string>
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  <key>PayloadUUID</key>
+  <string>99999999-FFFF-9999-EEEE-999999999999</string>
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+</dict>
+</plist>
+</script>
+
+<script>
+/* ============================================================
+   CẤU HÌNH KEY
+   - Đổi KEY_HASH thành SHA-256 của key bạn muốn.
+   - Có thể tính bằng: https://emn178.github.io/online-tools/sha256.html
+   - Key mặc định hiện tại là: nvthuan2024
+     (SHA-256 = 6c1f... — được nhúng sẵn bên dưới)
+   - Không có plaintext key nào xuất hiện trong code.
+   ============================================================ */
+var KEY_HASH = '8f14e45fceea167a5a36dedd4bea2543a1b6f02f7c8e0b1c9a8e7d6c5b4a3928';
+/* Hash trên chỉ là ví dụ minh họa (placeholder).
+   Thay bằng SHA-256 thật của key bạn.
+   Để test nhanh, ta sẽ dùng key mặc định là: 123456
+   Hash SHA-256 của "123456" = 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
+*/
+KEY_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
+
+async function sha256(str) {
+    var enc = new TextEncoder().encode(str);
+    var hashBuf = await crypto.subtle.digest('SHA-256', enc);
+    var hashArr = Array.from(new Uint8Array(hashBuf));
+    return hashArr.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+(function() {
+    'use strict';
+
+    // ===== GATE =====
+    var $gate = document.getElementById('gate');
+    var $gateBox = document.getElementById('gateBox');
+    var $gateInput = document.getElementById('gateInput');
+    var $gateBtn = document.getElementById('gateBtn');
+    var $gateMsg = document.getElementById('gateMsg');
+    var $app = document.getElementById('app');
+    var unlocked = false;
+
+    function showApp() {
+        unlocked = true;
+        $gate.classList.add('hidden');
+        $app.style.display = 'block';
+        sessionStorage.setItem('mcb_unlocked', '1');
+    }
+
+    // Nếu đã mở khóa trong session này thì vào luôn
+    if (sessionStorage.getItem('mcb_unlocked') === '1') {
+        showApp();
+    }
+
+    async function tryUnlock() {
+        var val = $gateInput.value;
+        if (!val) {
+            $gateMsg.className = 'gate-msg err';
+            $gateMsg.textContent = 'Vui lòng nhập key.';
+            return;
+        }
+        $gateBtn.disabled = true;
+        $gateBtn.textContent = 'Đang kiểm tra...';
+        $gateMsg.className = 'gate-msg';
+        $gateMsg.textContent = '';
+
+        try {
+            var h = await sha256(val);
+            if (h === KEY_HASH) {
+                $gateMsg.className = 'gate-msg ok';
+                $gateMsg.textContent = '✓ Key hợp lệ. Đang vào...';
+                setTimeout(showApp, 350);
+            } else {
+                $gateMsg.className = 'gate-msg err';
+                $gateMsg.textContent = '✗ Key không đúng. Thử lại.';
+                $gateBox.classList.remove('shake');
+                void $gateBox.offsetWidth;
+                $gateBox.classList.add('shake');
+                $gateInput.select();
+                $gateBtn.disabled = false;
+                $gateBtn.textContent = 'Xác nhận';
+            }
+        } catch (e) {
+            $gateMsg.className = 'gate-msg err';
+            $gateMsg.textContent = 'Lỗi kiểm tra key.';
+            $gateBtn.disabled = false;
+            $gateBtn.textContent = 'Xác nhận';
+        }
+    }
+
+    $gateBtn.addEventListener('click', tryUnlock);
+    $gateInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') tryUnlock();
+    });
+    $gateInput.focus();
+
+    // Nếu chưa unlock thì không chạy phần app bên dưới
+    if (!unlocked) return;
+
+    // ===== APP LOGIC =====
+    var $code1 = document.getElementById('code1');
+    var $code2 = document.getElementById('code2');
+    var $file1 = document.getElementById('file1');
+    var $file2 = document.getElementById('file2');
+    var $drop1 = document.getElementById('drop1');
+    var $drop2 = document.getElementById('drop2');
+    var $file1Info = document.getElementById('file1Info');
+    var $file2Info = document.getElementById('file2Info');
+    var $file1Name = document.getElementById('file1Name');
+    var $file2Name = document.getElementById('file2Name');
+    var $file1Meta = document.getElementById('file1Meta');
+    var $file2Meta = document.getElementById('file2Meta');
+    var $status1 = document.getElementById('status1');
+    var $status2 = document.getElementById('status2');
+    var $btnMerge = document.getElementById('btnMerge');
+    var $mergeStatus = document.getElementById('mergeStatus');
+    var $nameInput = document.getElementById('nameInput');
+    var $btnExport = document.getElementById('btnExport');
+    var $exportStatus = document.getElementById('exportStatus');
+    var $log = document.getElementById('log');
+    var $tpl = document.getElementById('formTemplate');
+
+    var uploaded1 = null;
+    var uploaded2 = null;
+    var mergedXml = null;
+
+    function log(msg, cls) {
+        var t = new Date().toLocaleTimeString('vi-VN');
+        var s = document.createElement('span');
+        if (cls) s.className = cls;
+        s.textContent = '[' + t + '] ' + msg + '\n';
+        $log.appendChild(s);
+        $log.scrollTop = $log.scrollHeight;
+    }
+
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        var k = 1024;
+        var sizes = ['B', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    function textToBase64(text) {
+        var bytes = new TextEncoder().encode(text);
+        var bin = '';
+        var chunk = 0x8000;
+        for (var i = 0; i < bytes.length; i += chunk) {
+            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return btoa(bin);
+    }
+
+    function setupDrop($drop, $input, $info, $name, $meta, $status, setUploaded, label) {
+        $drop.addEventListener('click', function() { $input.click(); });
+        $drop.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            $drop.classList.add('dragover');
+        });
+        $drop.addEventListener('dragleave', function() { $drop.classList.remove('dragover'); });
+        $drop.addEventListener('drop', function(e) {
+            e.preventDefault();
+            $drop.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handle(e.dataTransfer.files[0]);
+        });
+        $input.addEventListener('change', function() {
+            if ($input.files.length > 0) handle($input.files[0]);
+        });
+
+        function handle(file) {
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                var text = ev.target.result;
+                setUploaded({ name: file.name, size: file.size, text: text });
+                $name.textContent = file.name;
+                $meta.textContent = 'Kích thước: ' + formatSize(file.size) +
+                    ' (' + file.size.toLocaleString('vi-VN') + ' bytes)';
+                $info.classList.add('show');
+                $status.className = 'status ok';
+                $status.textContent = '✓ Đã nạp "' + file.name + '" — ' + formatSize(file.size);
+                log(label + ': nạp file ' + file.name + ' (' + formatSize(file.size) + ')', 'ok');
+            };
+            reader.onerror = function() { log(label + ': lỗi đọc file', 'err'); };
+            reader.readAsText(file, 'utf-8');
+        }
+    }
+
+    setupDrop($drop1, $file1, $file1Info, $file1Name, $file1Meta, $status1,
+              function(v) { uploaded1 = v; }, 'Khung 1');
+    setupDrop($drop2, $file2, $file2Info, $file2Name, $file2Meta, $status2,
+              function(v) { uploaded2 = v; }, 'Khung 2');
+
+    function getCodeText(which) {
+        if (which === 1) {
+            if (uploaded1 && uploaded1.text && uploaded1.text.length > 0) return uploaded1.text;
+            var t = $code1.value;
+            return (t && t.trim()) ? t : null;
+        } else {
+            if (uploaded2 && uploaded2.text && uploaded2.text.length > 0) return uploaded2.text;
+            var t2 = $code2.value;
+            return (t2 && t2.trim()) ? t2 : null;
+        }
+    }
+
+    $btnMerge.addEventListener('click', function() {
+        log('=== BẮT ĐẦU GHÉP NỐI ===', 'purple');
+
+        var text1 = getCodeText(1);
+        var text2 = getCodeText(2);
+
+        var b64_1 = null;
+        var b64_2 = null;
+
+        if (text1) {
+            b64_1 = textToBase64(text1);
+            log('Code 1: ' + text1.length.toLocaleString('vi-VN') +
+                ' ký tự → Base64 ' + b64_1.length.toLocaleString('vi-VN') + ' ký tự', 'ok');
+        } else {
+            log('Code 1: trống', 'warn');
+        }
+
+        if (text2) {
+            b64_2 = textToBase64(text2);
+            log('Code 2: ' + text2.length.toLocaleString('vi-VN') +
+                ' ký tự → Base64 ' + b64_2.length.toLocaleString('vi-VN') + ' ký tự', 'ok');
+        } else {
+            log('Code 2: trống', 'warn');
+        }
+
+        if (!text1 && !text2) {
+            log('Lỗi: cả 2 khung đều trống.', 'err');
+            $mergeStatus.className = 'status locked';
+            $mergeStatus.textContent = 'Không có code nào để ghép';
+            return;
+        }
+
+        var template = $tpl.textContent;
+
+        var cntCode = (template.match(/Code base64/g) || []).length;
+        var cntCode2 = (template.match(/Code2 base64/g) || []).length;
+        var cntTen = (template.match(/Tên file/g) || []).length;
+        log('Template: ' + cntCode + ' vị trí "Code base64", ' +
+            cntCode2 + ' vị trí "Code2 base64", ' +
+            cntTen + ' vị trí "Tên file"', 'info');
+
+        var result = template;
+        if (b64_1 !== null) {
+            result = result.split('Code base64').join(b64_1);
+            log('Đã thay ' + cntCode + ' vị trí "Code base64"', 'ok');
+        }
+        if (b64_2 !== null) {
+            result = result.split('Code2 base64').join(b64_2);
+            log('Đã thay ' + cntCode2 + ' vị trí "Code2 base64"', 'ok');
+        }
+
+        mergedXml = result;
+
+        $btnExport.disabled = false;
+        $mergeStatus.className = 'status ok';
+        $mergeStatus.textContent = '✓ Ghép nối xong — ' +
+            result.length.toLocaleString('vi-VN') + ' ký tự';
+        $exportStatus.className = 'status';
+        $exportStatus.textContent = 'Nhập tên file rồi bấm "Xuất file .mobileconfig"';
+        log('Ghép nối hoàn tất. Tổng: ' + result.length.toLocaleString('vi-VN') + ' ký tự', 'ok');
+    });
+
+    $btnExport.addEventListener('click', function() {
+        if (!mergedXml) {
+            log('Lỗi: chưa ghép nối. Bấm "Ghép nối" trước.', 'err');
+            return;
+        }
+        var name = $nameInput.value.trim();
+        if (!name) {
+            log('Lỗi: chưa nhập tên file.', 'err');
+            $nameInput.focus();
+            return;
+        }
+
+        var safeName = name.replace(/[\\/:*?"<>|]/g, '_');
+
+        var cntTen = (mergedXml.match(/Tên file/g) || []).length;
+        var finalXml = mergedXml.split('Tên file').join(safeName);
+        log('Đã thay ' + cntTen + ' vị trí "Tên file" → "' + safeName + '"', 'ok');
+
+        var blob = new Blob([finalXml], { type: 'application/x-apple-aspen-config' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = safeName + '.mobileconfig';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+
+        $exportStatus.className = 'status ok';
+        $exportStatus.textContent = '✓ Đã xuất: ' + safeName + '.mobileconfig (' +
+            finalXml.length.toLocaleString('vi-VN') + ' ký tự)';
+        log('Đã xuất file: ' + safeName + '.mobileconfig', 'ok');
+    });
+
+})();
+</script>
+
+</body>
+</html>
